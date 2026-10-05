@@ -129,11 +129,11 @@ para comprobar que el dashboard es accesible desde fuera de la red local. Se us�
 
 | Advertencia y título | Entrada (barra lateral) | Inferencia corte a corte |
 |---|---|---|
-| ![alt text](image-2.png) | ![alt text](image-3.png) | ![alt text](image-4.png) |
+| ![alt text](imgs/image-2.png) | ![alt text](imgs/image-3.png) | ![alt text](imgs/image-4.png) |
 
 | Reconstrucción 3D (distancia en mm por fragmento) | Fragmentos y latencia |
 |---|---|
-| ![alt text](image.png)| ![alt text](image-1.png)|
+| ![alt text](imgs/image.png)| ![alt text](imgs/image-1.png)|
 
 ---
 
