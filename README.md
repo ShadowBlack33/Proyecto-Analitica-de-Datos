@@ -237,4 +237,3 @@ postproceso:
 
 **Carlos Andrés Orozco Caicedo** · **José David Mesa Ramírez** · **Sara Lucía Rojas Mejía** · **Esteban Cobo Gómez**
 Data & AI Engineering · Universidad Autónoma de Occidente · Cali, Colombia 🇨🇴
-hola
