@@ -139,7 +139,8 @@ class PerdidaPengwin:
         if "seg" in cabezas:
             sem, rol, borde = out["sem"].float(), out["rol"].float(), out["borde"].float()
             comp["sem"] = F.cross_entropy(sem, batch["sem"]) + dice_multiclase(sem, batch["sem"], [1, 2, 3])
-            comp["rol"] = F.cross_entropy(rol, batch["rol"]) + dice_multiclase(rol, batch["rol"], [1, 2])
+            w_rol = torch.tensor([1.0, 1.0, float(c.get("peso_rol_secundario", 1.0))], device=rol.device)
+            comp["rol"] = F.cross_entropy(rol, batch["rol"], weight=w_rol) + dice_multiclase(rol, batch["rol"], [1, 2])
             pw = torch.tensor(c["borde_pos_weight"], device=borde.device)
             comp["borde"] = F.binary_cross_entropy_with_logits(borde[:, 0], batch["borde"], pos_weight=pw)
 

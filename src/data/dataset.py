@@ -75,14 +75,14 @@ def pila_contexto(img_vol, z: int, contexto: int) -> np.ndarray:
     return np.stack([img_vol[i] for i in idx], 0)
 
 
-def construir_targets(lbl: torch.Tensor, dist: torch.Tensor) -> dict:
+def construir_targets(lbl: torch.Tensor, dist: torch.Tensor, grosor_borde: int = 1) -> dict:
     lbl_np = lbl.numpy().astype(np.uint8)
     sem = region_de_etiqueta(lbl_np)
     idx = indice_en_region(lbl_np)
     rol = np.zeros_like(idx)
     rol[idx == 1] = 1
     rol[idx >= 2] = 2
-    borde = mapa_borde(lbl_np)
+    borde = mapa_borde(lbl_np, grosor_borde)
 
     cls = np.zeros(6, np.float32)
     cajas = np.zeros((3, 4), np.float32)
@@ -137,7 +137,8 @@ class PengwinCortes(Dataset):
 
         au = self.cfg["aumentos"]
         if self.entrenamiento and au["activar"]:
-            img, lbl, dist = A.geometrico(img, lbl, dist, grados=au["rotacion_grados"], flip=au["flip_horizontal"])
+            if random.random() < au.get("prob_geometrico", 1.0):
+                img, lbl, dist = A.geometrico(img, lbl, dist, grados=au["rotacion_grados"], flip=au["flip_horizontal"])
             if random.random() < au["prob_degradacion"]:
                 img = A.degradacion_aleatoria(img, au)
         elif self.nivel_degradacion:
@@ -145,7 +146,7 @@ class PengwinCortes(Dataset):
             torch.manual_seed(zlib.crc32(f"{cid}-{z}".encode()))
             img = A.degradar(img, **A.NIVELES_DEGRADACION[self.nivel_degradacion])
 
-        t = construir_targets(lbl, dist)
+        t = construir_targets(lbl, dist, int(self.cfg["datos"].get("grosor_borde", 1)))
         t["img"] = img
         t["caso"] = cid
         t["z"] = z

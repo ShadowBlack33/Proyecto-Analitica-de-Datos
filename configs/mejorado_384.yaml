@@ -1,0 +1,41 @@
+# Experimento "mejorado_384": ataca la absorcion de fragmentos secundarios.
+# Parte del modelo completo (256 px) y reentrena segmentacion + conjunto a 384 px con:
+#   - resolucion 384 (fragmentos pequenos y bordes de contacto con mas pixeles)
+#   - peso x3 a la clase "secundario" en la perdida de rol
+#   - rotacion de hasta 35 grados en el 80 % de las muestras (20 % sin girar)
+#   - borde de contacto mas grueso (grosor 2: banda de ~5 px) para que el watershed corte mejor
+# Regla de decision fijada ANTES de ver resultados: se adopta solo si mejora el Dice por
+# fragmento en VALIDACION frente a completo (0.697). El test se reporta, no se usa para decidir.
+#   powershell -ExecutionPolicy Bypass -File scripts/correr_noche.ps1
+hereda: default.yaml
+
+rutas:
+  cache: data/cache384
+
+datos:
+  resolucion: 384
+  grosor_borde: 2
+
+aumentos:
+  rotacion_grados: 35
+  prob_geometrico: 0.8
+
+perdida:
+  peso_rol_secundario: 3.0
+
+modelo:
+  pesos_iniciales: checkpoints/completo/mejor_conjunto.pth
+
+entrenamiento:
+  batch_size: 12                   # a 384 px; perfil_memoria lo verifica al inicio
+  etapas:
+    - nombre: segmentacion
+      cabezas: [cls, det, seg]
+      epocas: 12
+      congelar_backbone: false
+      lr_factor: 0.3
+    - nombre: conjunto
+      cabezas: [cls, det, seg, dist]
+      epocas: 8
+      congelar_backbone: false
+      lr_factor: 0.1
