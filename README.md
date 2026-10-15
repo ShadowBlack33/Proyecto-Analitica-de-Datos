@@ -30,20 +30,23 @@ This project deliberately **does not** wrap YOLO, Detectron2 or a pretrained Mas
 
 ## 📊 Results
 
-Held-out test set: **15 patients** never seen during training or tuning. Official configuration (post-processing chosen on validation).
+Held-out test set: **15 patients** never seen during training or tuning. Final model: **`mejorado_384`** (fine-tuned at 384 px from the 256-px base model; selected on validation, see below).
 
-| Task | Metric | Result |
-|---|---|---|
-| Anatomical classification | F1 / AUC | **0.987 / 0.999** |
-| Bone detection | Box IoU | **0.885** |
-| Bone detection | mAP@0.50 / mAP@[0.50:0.95] | **0.877 / 0.750** |
-| Fragment segmentation | Dice / IoU | 0.676 / 0.597 |
-| Fragment segmentation | HD95 / ASSD | 21.5 mm / 4.6 mm |
-| Fragment instances | Precision / recall | 0.602 / 0.879 |
-| Displacement | Mean abs. error (geometric) | 5.1 mm |
-| Inference | Latency | ~8 ms per slice on an RTX 3060 Laptop (~3 s of network time per CT) |
+| Task | Metric | Base model (256 px) | **Final model (384 px)** |
+|---|---|---|---|
+| Anatomical classification | F1 / AUC | 0.987 / 0.999 | 0.985 / 0.999 |
+| Bone detection | Box IoU | 0.885 | **0.898** |
+| Bone detection | mAP@0.50 / mAP@[0.50:0.95] | 0.877 / 0.750 | **0.907 / 0.776** |
+| Bone (semantic) segmentation | Dice / IoU | 0.947 / 0.900 | **0.972 / 0.946** |
+| Fragment segmentation | Dice / IoU | 0.676 / 0.597 | **0.719 / 0.645** |
+| Fragment segmentation | HD95 / ASSD | 21.5 mm / 4.6 mm | 23.3 mm / 4.9 mm |
+| Fragment instances | Precision / recall | 0.602 / 0.879 | **0.600 / 0.923** |
+| Displacement | Mean abs. error (geometric) | 5.1 mm | **3.5 mm** |
+| Inference | Latency (RTX 3060 Laptop) | ~8 ms per slice | ~16 ms per slice typical (36 ms mean in the test run) |
 
-**Robustness** — the same test set with increasing noise, blur, resolution loss and contrast shift:
+**How the final model was chosen.** The decision rule was fixed before looking at results: adopt the new recipe only if fragment Dice on **validation** improves by more than 0.01 over the base model. It went from 0.695 to **0.719** (+0.024; main fragments 0.911 → 0.929, secondary 0.479 → 0.509). Test is reported, never used to decide. Single seed: the gain is several times the seed-to-seed noise reported for similar models, but it was not re-measured with multiple seeds.
+
+**Robustness** (base model) — the same test set with increasing noise, blur, resolution loss and contrast shift:
 
 | Degradation | none | light | medium | heavy |
 |---|---|---|---|---|
@@ -53,9 +56,10 @@ Held-out test set: **15 patients** never seen during training or tuning. Officia
 
 **What the analysis showed**
 
-- **Finding and locating bones is solved and robust** — detection and classification stay well above target even under heavy degradation; box IoU is 0.92 on the hip bones and 0.76 on the sacrum.
-- **The hard part is touching fragments.** Main fragments reach Dice 0.91; the gap is in secondary fragments. Diagnostics show 38 % of them get *absorbed* into the main fragment — mostly large ones (median 35 mL), where the network can't tell which piece is "the main one". Thirteen post-processing variants didn't fix it: it's a model-level limitation of the main/secondary labelling scheme, the same one discussed in the challenge paper.
-- **Dice hides false fragments.** On validation the model predicted 216 fragments for 90 real ones. A fragment-precision metric exposed it, and a 1 mL minimum fragment size chosen on validation (precision 0.38 → 0.62 there) gives 0.60 precision on test, at a measured Dice cost (0.711 → 0.676): a documented precision/Dice trade-off.
+- **Finding and locating bones is solved and robust** — detection and classification stay well above target even under heavy degradation.
+- **Orientation is handled from the metadata.** 34 of the 100 CTs are stored rotated 180° in-plane (direction matrix `-1,-1,1`). Every volume is reoriented losslessly to RAI from its direction matrix (no interpolation); we checked that the slice normal equals the cross product of the in-plane axes and that no volume is mirrored. Residual patient tilt, measured from the centroids of the two hip bones, has a median of 3°, so it is covered by rotation augmentation instead of resampling the volume (which would interpolate labels and distort millimetre distances, since z spacing differs from x/y).
+- **The hard part is touching fragments.** Main fragments reach Dice 0.93; the gap is in secondary fragments. Diagnostics show about 40 % of them get *absorbed* into the main fragment — mostly large ones, where a slice-by-slice network can't tell which piece is "the main one" (a 3D property). Thirteen post-processing variants didn't fix it. The 384-px recipe (×3 weight on the secondary class, 35° rotation on 80 % of samples, thicker contact border) improved the *quality* of the fragments it separates (Dice of correctly separated secondaries 0.76 → 0.82) but **not the absorption rate** — that remains the main limitation.
+- **Dice hides false fragments.** On validation the model predicted 216 fragments for 90 real ones. A fragment-precision metric exposed it, and a 1 mL minimum fragment size chosen on validation keeps test precision at 0.60, at a measured Dice cost: a documented precision/Dice trade-off.
 - **Transfer learning didn't help.** Initialising the backbone from a detector trained on natural photos gave the same results as training from scratch, and both models end with near-identical BatchNorm γ — training washes the initialisation out.
 - **The network uses all its capacity** — no BatchNorm channel is switched off in any layer. Grad-CAM shows the classifier uses anatomical context (the opposite side and the spine) to tell left from right, while the detection head's objectness stays tightly on the bone.
 
@@ -76,7 +80,7 @@ flowchart LR
   V --> O[Labelled fragments + displacement table + 3D mesh]
 ```
 
-6.8 M parameters, trained in four curriculum stages (detection → segmentation → distance → joint fine-tuning), mixed precision, ~5 h on a 6 GB laptop GPU.
+6.8 M parameters, trained in four curriculum stages (detection → segmentation → distance → joint fine-tuning) at 256 px, mixed precision, ~5 h on a 6 GB laptop GPU. The final model continues from those weights at 384 px (segmentation + joint stages, 20 epochs, ~3 h): every layer is convolutional, so the same weights work at the higher resolution and the detection grid simply grows from 16×16 to 24×24.
 
 ```
 src/
@@ -130,9 +134,11 @@ python scripts/eda.py
 ### 3. Train, evaluate, infer
 
 ```bash
-python scripts/train.py --nombre completo                       # full curriculum (~5 h on an RTX 3060)
-python scripts/evaluar.py --ckpt pesos/completo.pth --nombre completo --degradacion 0 1 2 3
-python scripts/inferir.py --ckpt pesos/completo.pth --ct data/raw/images/039.mha   # exports a labelled .mha
+python scripts/train.py --nombre completo                       # base model, full curriculum (~5 h on an RTX 3060)
+powershell -ExecutionPolicy Bypass -File scripts/correr_noche.ps1   # final model: 384-px cache, fine-tuning, validation diagnosis, test, comparison (~3.5 h)
+
+python scripts/evaluar.py --config configs/mejorado_384.yaml --ckpt pesos/mejorado_384.pth --nombre mejorado_384
+python scripts/inferir.py --config configs/mejorado_384.yaml --ckpt pesos/mejorado_384.pth --ct data/raw/images/039.mha   # exports a labelled .mha
 ```
 
 Pretrained weights are in `pesos/`, so evaluation and inference work without training. Interrupted runs resume with `--reanudar checkpoints/<name>/ultimo.pth`.
@@ -169,6 +175,7 @@ A fragment table and the measured latency sit alongside the viewers.
 | `scripts/diagnostico_fragmentos.py` | What happened to each real fragment (correct / absorbed / split / merged / lost), and whether the failure is the network or the post-processing |
 | `… --barrido` / `--barrido_tamano` | Post-processing and minimum-fragment-size sweeps on **validation**, with a stated selection rule |
 | `scripts/evaluar.py --degradacion 0 1 2 3` | Robustness under four fixed, reproducible degradation levels |
+| `scripts/comparar_experimentos.py` | New recipe vs. base model on validation (decides) and test (reported), with the pre-registered adoption rule |
 | `scripts/calibrar_lambdas.py` | Loss weights from gradient-norm balance on the shared backbone, instead of copied values |
 | `scripts/overfit_test.py` · `perfil_memoria.py` | Correctness (can it memorise a batch?) and peak VRAM per resolution/batch |
 | `scripts/baseline_sam.py` | Zero-shot SAM prompted with our boxes, as an out-of-domain baseline |
@@ -178,7 +185,7 @@ A fragment table and the measured latency sit alongside the viewers.
 
 ## 🧾 Configuration
 
-Everything lives in `configs/default.yaml`; ablations inherit from it and change exactly one factor (`configs/ablacion_sin_cbam.yaml`, `configs/ablacion_con_tl.yaml`).
+Everything lives in `configs/default.yaml`; ablations inherit from it and change exactly one factor (`configs/ablacion_sin_cbam.yaml`, `configs/ablacion_con_tl.yaml`). The final model, `configs/mejorado_384.yaml`, also inherits from it and overrides resolution (384), secondary-class weight (×3), rotation (35° on 80 % of samples), contact-border thickness and the starting weights.
 
 ```yaml
 datos:
