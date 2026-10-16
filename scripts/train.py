@@ -55,6 +55,12 @@ def main():
     print(f"[datos] train {len(ds_tr)} cortes de {len(splits['train'])} casos | val {len(ds_va)} cortes")
 
     modelo = PengwinNet(cfg["modelo"], in_ch=2 * cfg["datos"]["contexto"] + 1).to(dev)
+    if cfg["modelo"].get("pesos_iniciales"):
+        # ajuste fino: todas las capas son convolucionales, asi que los pesos entrenados a 256 px
+        # sirven a 384 px (el grid de deteccion pasa de 16x16 a 24x24 con el mismo stride)
+        ini = torch.load(cfg["modelo"]["pesos_iniciales"], map_location="cpu", weights_only=False)
+        modelo.load_state_dict(ini["modelo"] if "modelo" in ini else ini)
+        print(f"[inicio] pesos completos desde {cfg['modelo']['pesos_iniciales']}")
     if cfg["modelo"].get("pesos_backbone"):
         cargar_pesos_parciales(modelo.backbone, cfg["modelo"]["pesos_backbone"])
     print(f"[modelo] {contar_parametros(modelo):,} parametros | dispositivo {dev}")
