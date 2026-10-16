@@ -46,17 +46,21 @@ Held-out test set: **15 patients** never seen during training or tuning. Final m
 
 **How the final model was chosen.** The decision rule was fixed before looking at results: adopt the new recipe only if fragment Dice on **validation** improves by more than 0.01 over the base model. It went from 0.695 to **0.719** (+0.024; main fragments 0.911 → 0.929, secondary 0.479 → 0.509). Test is reported, never used to decide. Single seed: the gain is several times the seed-to-seed noise reported for similar models, but it was not re-measured with multiple seeds.
 
-**Robustness** (base model) — the same test set with increasing noise, blur, resolution loss and contrast shift:
+**Robustness** — the same test set with increasing noise, blur, resolution loss and contrast shift (base → final model):
 
 | Degradation | none | light | medium | heavy |
 |---|---|---|---|---|
-| F1 classification | 0.987 | 0.987 | 0.987 | 0.971 |
-| mAP@0.50 | 0.877 | 0.877 | 0.876 | 0.845 |
-| Fragment Dice | 0.676 | 0.660 | 0.627 | 0.574 |
+| F1 classification | 0.987 → 0.985 | 0.987 → 0.984 | 0.987 → 0.985 | 0.971 → **0.979** |
+| mAP@0.50 | 0.877 → **0.907** | 0.877 → **0.907** | 0.876 → **0.907** | 0.845 → **0.877** |
+| Fragment Dice | 0.676 → **0.719** | 0.660 → **0.701** | 0.627 → **0.672** | 0.574 → **0.617** |
+| Fragment precision | 0.602 → 0.600 | 0.604 → 0.610 | 0.537 → 0.574 | 0.473 → 0.522 |
+| Displacement MAE (mm) | 5.1 → **3.5** | 5.6 → **3.9** | 5.2 → **4.7** | 6.2 → **3.5** |
+
+The final model is better at every level. Under the heaviest degradation its detection (mAP@0.50 0.877) equals the base model's on clean images; fragment separation still degrades most (Dice 0.719 → 0.617) and produces more spurious fragments.
 
 **What the analysis showed**
 
-- **Finding and locating bones is solved and robust** — detection and classification stay well above target even under heavy degradation.
+- **Finding and locating bones is solved and robust** — detection and classification stay well above target even under heavy degradation (final model: mAP@0.50 0.877 and F1 0.979 at the heaviest level).
 - **Orientation is handled from the metadata.** 34 of the 100 CTs are stored rotated 180° in-plane (direction matrix `-1,-1,1`). Every volume is reoriented losslessly to RAI from its direction matrix (no interpolation); we checked that the slice normal equals the cross product of the in-plane axes and that no volume is mirrored. Residual patient tilt, measured from the centroids of the two hip bones, has a median of 3°, so it is covered by rotation augmentation instead of resampling the volume (which would interpolate labels and distort millimetre distances, since z spacing differs from x/y).
 - **The hard part is touching fragments.** Main fragments reach Dice 0.93; the gap is in secondary fragments. Diagnostics show about 40 % of them get *absorbed* into the main fragment — mostly large ones, where a slice-by-slice network can't tell which piece is "the main one" (a 3D property). Thirteen post-processing variants didn't fix it. The 384-px recipe (×3 weight on the secondary class, 35° rotation on 80 % of samples, thicker contact border) improved the *quality* of the fragments it separates (Dice of correctly separated secondaries 0.76 → 0.82) but **not the absorption rate** — that remains the main limitation.
 - **Dice hides false fragments.** On validation the model predicted 216 fragments for 90 real ones. A fragment-precision metric exposed it, and a 1 mL minimum fragment size chosen on validation keeps test precision at 0.60, at a measured Dice cost: a documented precision/Dice trade-off.
