@@ -1,0 +1,10 @@
+# Ablacion sobre el MODELO FINAL: mejorado_384 sin CBAM.
+# Misma receta que mejorado_384 (384 px, peso x3 a secundarios, rotacion 35 grados, borde grueso,
+# segmentacion 12 + conjunto 8 epocas), pero sin CBAM y partiendo del modelo base SIN CBAM
+# (entrenado con ablacion_sin_cbam.yaml). Asi la unica diferencia con mejorado_384 es CBAM.
+#   python scripts/train.py --config configs/ablacion_sin_cbam_384.yaml --nombre sin_cbam_384
+hereda: mejorado_384.yaml
+
+modelo:
+  cbam_en_bloques: []
+  pesos_iniciales: pesos/sin_cbam.pth
