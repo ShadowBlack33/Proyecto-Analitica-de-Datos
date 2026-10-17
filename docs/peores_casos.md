@@ -57,7 +57,10 @@ Esto no contradice la elección del modelo: se eligió por validación, y en tes
   principal del GT (LI-1) se empareja con el fragmento que el modelo llama LI-3 (Dice 0.23) y el LI-3 del GT con el LI-1
   predicho (0.45); el LI-4 queda en 0.04. LI-2, RI-1, RI-2 y SA-1 salen bien (0.84 a 0.96). Hay 5 espurios, uno grande en
   el coxal derecho (14.2 mL) y cuatro de 1.2 a 2.6 mL.
-- **Lo que se ve en la figura:** _(pendiente: revisar `peor_085.png`)_
+- **Lo que se ve en la figura (corte 250):** en el GT, el coxal izquierdo tiene dos piezas: el principal LI-1 (la parte
+  baja, azul oscuro) y el secundario LI-3 (la punta superior del ala, azul claro), separados por la línea de fractura.
+  En la predicción las dos piezas salen con el color de LI-3: el fragmento que el modelo empareja con el secundario cubre
+  también la zona del principal. El sacro y el coxal derecho se ven bien, y en este corte no hay fragmentos rojos.
 - **Hipótesis (por confirmar):** el modelo no distingue cuál de los fragmentos grandes del coxal izquierdo es el
   principal, una decisión que depende de la forma en 3D.
 
