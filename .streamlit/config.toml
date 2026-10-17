@@ -1,0 +1,12 @@
+# Tema visual del dashboard: paleta hospitalaria (blanco y verde quirófano).
+# Solo cambia colores y tipografía; no toca el funcionamiento.
+[theme]
+base = "light"
+primaryColor = "#12827c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#e7f4f1"
+textColor = "#17302e"
+font = "sans serif"
+
+[server]
+maxUploadSize = 1024   # MB; los CT pueden pasar del limite de 200 MB por defecto

@@ -21,13 +21,15 @@ RAIZ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RAIZ))
 
 from src.data.io import leer_volumen, listar_casos  # noqa: E402
+from src.dashboard.marca import ICONO, aplicar_diseno, marca_lateral  # noqa: E402  (solo diseño)
 from src.dashboard.visualizadores import vis_corte, vis_mip_raw, vis_reconstruccion  # noqa: E402
 from src.utils import cargar_config, dispositivo  # noqa: E402
 
 AVISO = ("**Uso exclusivamente académico.** Este sistema no es un dispositivo médico, no ha sido "
          "validado clínicamente y no debe usarse para apoyar decisiones quirúrgicas reales.")
 
-st.set_page_config(page_title="PENGWIN · fracturas pélvicas", page_icon="🦴", layout="wide")
+st.set_page_config(page_title="PENGWIN · fracturas pélvicas", page_icon=ICONO, layout="wide")
+aplicar_diseno()
 st.warning(AVISO, icon="⚠️")
 st.title("🦴 PENGWIN — detección, segmentación y medición de fracturas pélvicas")
 
@@ -36,9 +38,16 @@ cfg = cargar_config(RAIZ / "configs" / "default.yaml")
 
 @st.cache_resource(show_spinner="Cargando modelo…")
 def _modelo(ruta: str, dev: str):
+    """Cada checkpoint guarda la configuracion con la que se entreno (resolucion, CBAM...).
+    Se usa esa para construir la red e inferir; el post-proceso y las rutas vienen del repo."""
     from src.inferencia import cargar_modelo
     import torch
-    return cargar_modelo(ruta, cfg, torch.device(dev))
+    ck = torch.load(ruta, map_location="cpu", weights_only=False)
+    cfg_ck = ck.get("config") if isinstance(ck, dict) else None
+    cfg_ck = dict(cfg_ck) if cfg_ck else dict(cfg)
+    cfg_ck["rutas"] = cfg["rutas"]
+    cfg_ck["postproceso"] = {**cfg_ck.get("postproceso", {}), **cfg["postproceso"]}
+    return cargar_modelo(ruta, cfg_ck, torch.device(dev)), cfg_ck
 
 
 @st.cache_data(show_spinner="Leyendo volumen…", max_entries=2)
@@ -48,6 +57,7 @@ def _volumen(ruta: str):
 
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
+    marca_lateral()
     st.header("Entrada")
     fuente = st.radio("Volumen", ["Caso del dataset", "Subir archivo (.mha / .nii.gz)"])
     ruta_vol = ruta_gt = None
@@ -69,8 +79,11 @@ with st.sidebar:
             ruta_vol = str(tmp)
 
     st.header("Modelo")
-    cks = sorted(str(p.relative_to(RAIZ)) for p in (RAIZ / cfg["rutas"]["checkpoints"]).rglob("mejor_*.pth"))
-    ruta_ck = st.selectbox("Checkpoint", cks) if cks else None
+    publicados = sorted((RAIZ / "pesos").glob("*.pth"))
+    final = [p for p in publicados if p.stem == "sin_cbam_384"]
+    cks = [str(p.relative_to(RAIZ)) for p in final + [p for p in publicados if p not in final]]
+    cks += sorted(str(p.relative_to(RAIZ)) for p in (RAIZ / cfg["rutas"]["checkpoints"]).rglob("mejor_*.pth"))
+    ruta_ck = st.selectbox("Checkpoint", cks, help="pesos/sin_cbam_384.pth es el modelo final") if cks else None
     opciones_dev = ["cuda", "cpu"] if dispositivo().type == "cuda" else ["cpu"]
     dev = st.selectbox("Dispositivo", opciones_dev)
     correr = st.button("Ejecutar inferencia", type="primary", disabled=not (ruta_vol and ruta_ck))
@@ -89,8 +102,8 @@ if correr:
     import torch
     from src.inferencia import inferir_volumen
     t0 = time.perf_counter()
-    res = inferir_volumen(_modelo(RAIZ / ruta_ck if not Path(ruta_ck).is_absolute() else ruta_ck, dev),
-                          hu, spacing, cfg, torch.device(dev))
+    modelo, cfg_modelo = _modelo(str(RAIZ / ruta_ck if not Path(ruta_ck).is_absolute() else ruta_ck), dev)
+    res = inferir_volumen(modelo, hu, spacing, cfg_modelo, torch.device(dev))
     res["latencia"]["total_s"] = time.perf_counter() - t0
     st.session_state[clave] = res
 res = st.session_state.get(clave)

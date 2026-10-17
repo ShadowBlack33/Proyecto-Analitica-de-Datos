@@ -1,0 +1,62 @@
+{
+ "split": "val",
+ "casos": [
+  "008",
+  "014",
+  "016",
+  "025",
+  "044",
+  "053",
+  "058",
+  "061",
+  "062",
+  "079",
+  "087",
+  "089",
+  "093",
+  "097",
+  "099"
+ ],
+ "actual": {
+  "dice_fragmento": 0.792935005250305,
+  "dice_principal": 0.9342139973401961,
+  "dice_secundario": 0.651656013160414,
+  "secundarios_detectados": 0.9111111111111111,
+  "fragmentos_pred": 135,
+  "fragmentos_gt": 90,
+  "espurios": 49,
+  "precision_fragmentos": 0.6370370370370371
+ },
+ "categorias": [
+  {
+   "categoria": "absorbido",
+   "fragmentos": 7,
+   "volumen_ml_mediana": 41.2024765625,
+   "dice_medio": 0.13513373444101714,
+   "porcentaje": 0.15555555555555556
+  },
+  {
+   "categoria": "correcto",
+   "fragmentos": 35,
+   "volumen_ml_mediana": 19.3084716796875,
+   "dice_medio": 0.7936318018287076,
+   "porcentaje": 0.7777777777777778
+  },
+  {
+   "categoria": "fusionado",
+   "fragmentos": 2,
+   "volumen_ml_mediana": 3.7411787414550783,
+   "dice_medio": 0.45981635440653623,
+   "porcentaje": 0.044444444444444446
+  },
+  {
+   "categoria": "perdido",
+   "fragmentos": 1,
+   "volumen_ml_mediana": 5.02140474319458,
+   "dice_medio": 0.0,
+   "porcentaje": 0.022222222222222223
+  }
+ ],
+ "union_rol_crudo": 0.6268973310862204,
+ "union_post": 0.6558706882953027
+}

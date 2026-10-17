@@ -7,7 +7,8 @@ túnel de Cloudflare para abrirlo desde un celular, y qué problemas
 aparecieron al hacerlo. Se probó en un PC **sin GPU** (solo CPU): el pipeline completo corre
 sin cambios en el código.
 
-**Video de respaldo de la demo:** <https://youtu.be/JGUifamoWas>
+**Video de respaldo de la demo (modelo final `sin_cbam_384`):** <https://youtu.be/F4WF51ItQvI>  
+Video anterior, con el modelo `completo` y el diseño original del dashboard: <https://youtu.be/JGUifamoWas>
 
 ---
 
@@ -24,7 +25,8 @@ sin cambios en el código.
 | Disco | ~15 GB libres | 7 GB de zips + datos extraídos + caché |
 | Datos | PENGWIN Task 1 (CT) | [Zenodo](https://doi.org/10.5281/zenodo.10927452), 3 zips |
 
-Equipo de prueba: [PENDIENTE: procesador] · [PENDIENTE: RAM] GB de RAM · sin GPU NVIDIA.
+Equipo de prueba: AMD Ryzen 7 7730U (8 núcleos) · 23 GB de RAM utilizables · sin GPU NVIDIA
+(la gráfica integrada Radeon no la usa PyTorch, así que todo corre en CPU).
 
 ---
 
@@ -79,15 +81,14 @@ Verificación:
 
 ### 2.3 Pesos del modelo
 
-El dashboard solo lista los modelos que estén en `checkpoints/**/mejor_*.pth`, así que se
-copia el modelo publicado en `pesos/`:
+El dashboard lista directamente los modelos de `pesos/` (y los de `checkpoints/**/mejor_*.pth`,
+si hay entrenamientos locales). El primero de la lista es el modelo final,
+`pesos/sin_cbam_384.pth`: no hay que copiar nada.
 
-```powershell
-New-Item -ItemType Directory -Force checkpoints\completo
-Copy-Item pesos\completo.pth checkpoints\completo\mejor_conjunto.pth
-```
-
-`checkpoints/` está en `.gitignore`: esta copia nunca se sube al repositorio.
+Cada checkpoint guarda la configuración con la que se entrenó (resolución 256 o 384, con o sin
+CBAM), y el dashboard construye la red con esa configuración; el post-proceso (por ejemplo, el
+mínimo de 1 mL por fragmento) se toma de `configs/default.yaml`. Así se puede elegir cualquier
+modelo de `pesos/` en la demo sin tocar archivos.
 
 ### 2.4 Dashboard (terminal 1)
 
@@ -119,7 +120,7 @@ para comprobar que el dashboard es accesible desde fuera de la red local. Se us�
 | Revisión | Resultado |
 |---|---|
 | Advertencia de uso no clínico visible | ✅ |
-| Selección de caso, checkpoint y dispositivo (`cpu`) | ✅ |
+| Selección de caso, checkpoint (`pesos/sin_cbam_384.pth`, el primero de la lista) y dispositivo (`cpu`) | ✅ |
 | Visualizador 1: volumen crudo (MIP) | ✅ |
 | Visualizador 2: corte a corte, con cajas y etiqueta de cada fragmento | ✅ |
 | Visualizador 3: reconstrucción 3D, con la distancia en mm junto a cada fragmento | ✅ |
@@ -127,35 +128,56 @@ para comprobar que el dashboard es accesible desde fuera de la red local. Se us�
 
 ### Capturas desde el celular
 
-| Advertencia y título | Entrada (barra lateral) | Inferencia corte a corte |
-|---|---|---|
-| ![alt text](imgs/image-2.png) | ![alt text](imgs/image-3.png) | ![alt text](imgs/image-4.png) |
+Tomadas el 17 de octubre de 2026 desde el enlace `*.trycloudflare.com`, con el modelo final.
 
-| Reconstrucción 3D (distancia en mm por fragmento) | Fragmentos y latencia |
+| Advertencia y título | Entrada (barra lateral) | Visualizador 1: volumen crudo (MIP) |
+|---|---|---|
+| ![Advertencia y título](imgs/celular_1_advertencia.jpg) | ![Barra lateral](imgs/celular_2_barra_lateral.jpg) | ![MIP](imgs/celular_3_mip.jpg) |
+
+| Visualizador 2: predicción (corte 167) | Ground truth del mismo corte | Visualizador 3: reconstrucción 3D (distancia en mm) |
+|---|---|---|
+| ![Predicción corte a corte](imgs/celular_4_prediccion_corte.jpg) | ![Ground truth](imgs/celular_5_ground_truth_corte.jpg) | ![Reconstrucción 3D](imgs/celular_6_reconstruccion_3d.jpg) |
+
+| Tabla de fragmentos (celular horizontal) | Latencia, lanzada desde el celular |
 |---|---|
-| ![alt text](imgs/image.png)| ![alt text](imgs/image-1.png)|
+| ![Fragmentos](imgs/celular_7_fragmentos.jpg) | ![Latencia](imgs/celular_8_latencia.jpg) |
 
 ---
 
 ## 4. Tiempo de inferencia en CPU
 
-Caso de test `002` (337 cortes), dispositivo `cpu`, valores reportados por el dashboard en la
-pestaña *Fragmentos y latencia*. La inferencia **siempre se ejecuta en el PC** que corre
+Modelo final `pesos/sin_cbam_384.pth`, dispositivo `cpu`, valores reportados por el dashboard en
+la pestaña *Fragmentos y latencia*. La inferencia **siempre se ejecuta en el PC** que corre
 Streamlit; el celular solo muestra el resultado.
 
-| Ejecución | Latencia por corte | Tiempo total | Fragmentos detectados |
-|---|---|---|---|
-| Lanzada desde el PC | 170.4 ms | 74.2 s | 8 (3 principales + 5 secundarios) |
-| Lanzada desde el celular | 690.8 ms | 282.1 s | 8 (mismo resultado) |
+| Caso | Condición | Cortes | Latencia por corte | Tiempo total | Fragmentos detectados |
+|---|---|---|---|---|---|
+| `064` (entrenamiento) | PC dedicado | 350 | **353.3 ms** | **137.7 s** | No se reporta (caso de entrenamiento) |
+| `002` (test) | Mientras se grababa el video | 337 | 407.0 ms | 159.3 s | 7 (3 principales + 4 secundarios) |
+| `002` (test) | Lanzada desde el celular por el túnel | 337 | 780.8 ms | 311.6 s | 7 (mismo resultado) |
+| `002` (test), modelo `completo` a 256 px | Medición anterior, PC dedicado | 337 | 170.4 ms | 74.2 s | 8 (3 principales + 5 secundarios) |
 
-La segunda medición es unas 4 veces más lenta aunque el cálculo ocurre en el mismo PC. La causa
-más probable es que el PC estaba ocupado al mismo tiempo (otra pestaña del dashboard abierta,
-grabación de pantalla): cada sesión de Streamlit ejecuta su propia inferencia y compiten por la
-CPU. Por eso la cifra de referencia es la primera, medida con el PC dedicado: **≈ 170 ms por
-corte, ≈ 74 s por CT** en CPU, frente a ~8 ms por corte en GPU (RTX 3060 Laptop, según el README).
-Para la demo conviene correr la inferencia antes de presentar y mantener abierta una sola sesión.
+| Caso 064, PC dedicado | Caso 002 (test), durante la grabación del video |
+|---|---|
+| ![Latencia en CPU, caso 064](imgs/latencia_cpu_caso064.png) | ![Latencia en CPU, caso 002](imgs/latencia_cpu_caso002.png) |
 
-Los 5 fragmentos secundarios del caso 002 aparecen a 0.8 mm de su hueso, que es exactamente el
+La latencia por corte depende de la resolución de entrada (todo corte se lleva a 384 px) y de qué
+tan ocupado esté el PC, no del paciente. Por eso el caso 064 sirve para medir el tiempo con el PC
+dedicado, aunque sus fragmentos no cuentan como resultado porque es un caso de entrenamiento; el
+desempeño se muestra con el caso de test 002. La cifra de referencia es **≈ 353 ms por corte,
+≈ 2.3 min por CT** en CPU; con la grabación de pantalla activa subió a 407 ms. Es unas 2 veces
+más por corte que el modelo de 256 px, en línea con que procesa 2.25 veces más píxeles por corte
+(384² frente a 256²). En GPU el mismo modelo tarda ~13.5 ms por corte (RTX 3060 Laptop, según el
+README), unas 26 veces menos que en CPU.
+
+Lanzada desde el celular, la misma inferencia tardó 780.8 ms por corte, unas 2 veces la
+referencia, y dio exactamente los mismos fragmentos. El cálculo ocurre en el mismo PC, así que la
+diferencia viene de la carga del PC en ese momento: cada sesión de Streamlit ejecuta su propia
+inferencia y compite por la CPU con las demás sesiones y programas abiertos. Lo mismo pasó en la
+medición anterior (690.8 ms desde el celular frente a 170.4 ms desde el PC). Para la demo conviene
+correr la inferencia antes de presentar y mantener abierta una sola sesión.
+
+Los 4 fragmentos secundarios del caso 002 aparecen a 0.8 mm de su hueso, que es exactamente el
 espaciado entre cortes: están en contacto con el fragmento principal. Es la limitación de
 fragmentos en contacto que se discute en el informe final.
 
