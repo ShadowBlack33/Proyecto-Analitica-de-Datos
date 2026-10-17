@@ -66,10 +66,10 @@ Formato de cada entrada:
 - `baseline_sam.py` no se pudo ejecutar en el entorno de la IA (requiere descargar los pesos de SAM).
 - El tunel de Cloudflare no se probo; el dashboard si.
 
-**Que se modifico manualmente (Carlos):** corri todo con los datos reales en mi GPU y reemplace
+**Que se modifico manualmente:** corri todo con los datos reales en mi GPU y reemplace
 los valores provisionales: ventana de HU segun el EDA y lambdas calibrados, redondeados por mi.
 
-**Analisis critico (Carlos):** la IA dio la estructura, pero solo estaba probada con datos
+**Analisis critico:** la IA dio la estructura, pero solo estaba probada con datos
 sinteticos. Decidi no aceptar ningun resultado que no saliera de una corrida con datos reales.
 
 ## Sesion — eliminacion de scikit-learn (bloqueo de Windows)
@@ -87,7 +87,7 @@ a sklearn, incluidos empates y clases vacias). Se simulo el bloqueo (import de `
 y `sklearn` fallando) y se corrieron pruebas, entrenamiento, evaluacion, inferencia y
 dashboard: todo funciona y las metricas coinciden con la version anterior.
 
-**Analisis critico (Carlos):** el error lo encontre al entrenar en mi PC y le pase el traceback a la
+**Analisis critico:** el error lo encontre al entrenar en mi PC y le pase el traceback a la
 IA. Le pedi que la metrica propia se comparara contra sklearn antes de aceptarla.
 
 ## Sesion — configuraciones de ablacion y transfer learning desde el Taller 3
@@ -105,7 +105,7 @@ solo copiaba 5 tensores. Se corrigio y se agrego una prueba de equivalencia nume
 **Verificacion:** 14 pruebas pasan; ambas ablaciones entrenan en datos sinteticos; la salida
 del bloque copiado coincide con la original (diferencia maxima 5e-7).
 
-**Analisis critico (Carlos):** pedi que cada ablacion cambiara un solo factor para poder compararlas.
+**Analisis critico:** pedi que cada ablacion cambiara un solo factor para poder compararlas.
 El transfer learning no mejoro el Dice y decidimos reportarlo igual.
 
 ## Sesion — cargador con varios procesos y segundo bloqueo de Windows
@@ -128,7 +128,7 @@ como OK porque en ese momento aun no estaba bloqueado: la comprobacion por libre
 empates; con el bloqueo simulado corren entrenamiento, evaluacion y diagnostico; y las metricas por fragmento
 son identicas a las de la version con scipy en 144 fragmentos (mismas parejas, mismo Dice).
 
-**Analisis critico (Carlos):** los dos errores salieron en mis corridas en Windows y yo se los
+**Analisis critico:** los dos errores salieron en mis corridas en Windows y yo se los
 reporte a la IA; ella propuso las correcciones y las pruebas contra scipy.
 
 ## Sesion — interpretabilidad en el notebook
@@ -146,7 +146,7 @@ test con mas fragmentos.
 calculo del gamma detecta canales apagados. Con el modelo real, ningun canal del backbone esta apagado
 (gamma medio entre 0.91 y 0.99 por bloque).
 
-**Analisis critico (Carlos):** le pedi a la IA que el notebook mostrara pacientes con fractura,
+**Analisis critico:** le pedi a la IA que el notebook mostrara pacientes con fractura,
 Grad-CAM y el gamma de BatchNorm, porque sin eso no se podia explicar como decide la red.
 
 ## Sesion — precision de fragmentos y tamano minimo en mL
@@ -164,7 +164,7 @@ perder mas de 0.005 de Dice de fragmento".
 barrido corren de punta a punta con un modelo de prueba, y el barrido rechaza un minimo que elimina fragmentos
 reales pequenos.
 
-**Analisis critico (Carlos):** vi que el caso 039 tenia 19 fragmentos predichos para 9 reales aunque
+**Analisis critico:** vi que el caso 039 tenia 19 fragmentos predichos para 9 reales aunque
 el Dice salia bien. La IA ayudo a medir la precision y a elegir el minimo de 1 mL en validacion.
 
 
@@ -208,11 +208,11 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
 
 **Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
 
-**Que pedi:** que el dashboard cargara el modelo final; Esteban vio que solo cargaba el modelo base.
+**Que pedi:** que el dashboard cargara el modelo final; en el despliegue se vio que solo cargaba el modelo base.
 
 **En que ayudo la IA:** que el dashboard use la configuracion guardada en cada checkpoint.
 
-## 2026-10-04 — Despliegue del dashboard con tunel de Cloudflare (Esteban)
+## 2026-10-04 — Despliegue del dashboard con tunel de Cloudflare
 
 **Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
 
@@ -233,7 +233,7 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
 > "dame mi IA_USAGE de mi parte ... me ayudas a preparar el despliegue.md"
 
 **Que se obtuvo:**
-- Que tareas de la seccion 6 se podian empezar ya y cuales dependian de Carlos, David y Sara.
+- Que tareas de la seccion 6 se podian empezar ya y cuales dependian de otros integrantes.
 - La secuencia de comandos de PowerShell para clonar, crear el entorno, instalar PyTorch en
   version CPU, organizar y preparar los datos, copiar los pesos a `checkpoints/`, levantar
   Streamlit y abrir el tunel.
@@ -251,7 +251,6 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
 - La latencia (170.4 ms por corte, 74.2 s para el caso 002) se tomo del dashboard, no de la IA.
 - El video se volvio a grabar porque la primera version duraba 58 s y no mostraba la
   advertencia de uso no clinico.
-- [Esteban: anotar aqui lo que cambiaste a mano en el borrador de `despliegue.md`.]
 
 **Analisis critico:**
 - *Aciertos:* leer el codigo antes de responder evito instalar cosas innecesarias (por
@@ -268,7 +267,7 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
      lo que funciono fue clonar de nuevo.
   3. Se salio del alcance de la tarea: propuso medir la latencia en 3 casos con `inferir.py`,
      correr el EDA y analizar el MAE, cuando el reparto pide un solo caso y la latencia formal
-     en CPU es tarea de Sara. Al preguntarle "todo eso para hacer el paso mio?", releyo el
+     en CPU es tarea de otra integrante. Al preguntarle "todo eso para hacer el paso mio?", releyo el
      reparto y corrigio la lista.
   4. Supuso que habia que instalar cloudflared con `winget`, pero ya estaba instalado.
   5. No advirtio desde el principio que la terminal de Streamlit no debia reutilizarse, lo que
@@ -278,7 +277,7 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
   enlace desde un celular: esa verificacion es manual. Los borradores de documentacion hay que
   revisarlos, porque los datos del equipo (procesador, RAM) y las capturas no los puede saber.
 
-## 2026-10-16 — Evaluacion de Sara (matriz de confusion, peores casos, latencia CPU, model cards)
+## 2026-10-16 — Evaluacion (matriz de confusion, peores casos, latencia CPU, model cards)
 
 **Modelo usado:** Claude Sonnet 5.5, en claude.ai.
 
@@ -288,7 +287,7 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
 
 **Pendiente del equipo:** analisis critico y card de `sin_cbam`.
 
-## 2026-10-16 — Entradas de José David Mesa (ablaciones y línea base SAM)
+## 2026-10-16 — Ablaciones y línea base SAM
 
 Herramienta: Claude (Anthropic), en chat, octubre de 2026. La IA se usó como apoyo de consulta y para armar comandos; las decisiones sobre qué correr, con qué modelo y qué subir fueron propias.
 
@@ -337,3 +336,47 @@ git pull --rebase origin main
 git add docs/resultados_ablacion_sam.md
 git push -u origin feat/baseline-sam
 ```
+
+## 2026-10-16 — Informe final, registro de uso de IA y diseno del dashboard
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Prompts (resumen fiel):**
+> "necesito el informe final en doc, Arial 12, color negro, sin marca de agua, maximo 4 paginas
+> incluyendo bibliografia"
+>
+> "el IA_USAGE formalo en un solo archivo" (con las entradas de cada integrante)
+>
+> "quiero que el front del proyecto de analitica se vea parecido al de esta carpeta, con colores
+> hospitalarios blanco y verde azulado; no agregues cosas ni cambies el funcionamiento, solo diseno"
+>
+> Ademas se le paso el enunciado del proyecto y las paginas del reto PENGWIN para las referencias.
+
+**Que se obtuvo:**
+- Un borrador del informe en Word, con las cifras de `docs/resultados/` y las tablas pedidas por el
+  enunciado: metricas contra objetivos, ablacion con tiempos de entrenamiento, matriz de confusion,
+  cinco peores casos con hipotesis y comparacion de la distancia predicha contra el ground truth.
+- La union de las entradas de uso de IA del equipo en este archivo.
+- El diseno del dashboard (`src/dashboard/estilo.css`, `src/dashboard/marca.py`, `.streamlit/config.toml`
+  y el logo del reto), conectado a `app.py` con cuatro lineas que no tocan ningun control.
+
+**Que se modifico o verifico manualmente:**
+- El borrador se reviso contra el enunciado: faltaban los objetivos reales de la tabla de metricas,
+  la matriz de confusion, la galeria de peores casos y la comparacion de distancias, y se agregaron.
+- Las referencias del reto se tomaron de pengwin.grand-challenge.org.
+- El diseno se pidio mas sobrio, con barra lateral verde y el logo de PENGWIN, hasta la version final.
+
+**Analisis critico:**
+- *Aciertos:* calculo la comparacion de distancias desde los JSON de evaluacion y encontro el hallazgo
+  principal: 20 de 25 fragmentos emparejados tienen error de 1 mm o menos, y el error medio lo causan
+  tres fragmentos realmente desplazados que el modelo midio como pegados. Tambien detecto que el
+  enunciado exige CBAM en el backbone, algo que el modelo final ya no tiene, y que el dashboard solo
+  cargaba la configuracion del modelo base; lo verifico cargando los pesos.
+- *Errores de la IA:* la primera version del informe no cubria todos los requisitos del enunciado
+  (faltaban la matriz de confusion, la galeria y la comparacion de distancias); una actualizacion del
+  diseno no llego al PC aunque la herramienta la reporto como escrita, y solo se noto cuando el
+  dashboard seguia viendose igual (desde entonces se verifica con checksum); una version del informe
+  quedo en 5 paginas y hubo que recortarla.
+- *Limitaciones:* las hipotesis de los peores casos salen de los numeros y no de mirar las imagenes, asi
+  que hay que confirmarlas con la galeria; el informe quedo justo en 4 paginas y Word puede acomodar las
+  tablas distinto al convertidor usado para verificarlo.
