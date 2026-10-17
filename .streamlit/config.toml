@@ -7,3 +7,6 @@ backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#e7f4f1"
 textColor = "#17302e"
 font = "sans serif"
+
+[server]
+maxUploadSize = 1024   # MB; los CT pueden pasar del limite de 200 MB por defecto
