@@ -277,16 +277,6 @@ lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793
   enlace desde un celular: esa verificacion es manual. Los borradores de documentacion hay que
   revisarlos, porque los datos del equipo (procesador, RAM) y las capturas no los puede saber.
 
-## 2026-10-16 — Evaluacion (matriz de confusion, peores casos, latencia CPU, model cards)
-
-**Modelo usado:** Claude Sonnet 5.5, en claude.ai.
-
-**Que se obtuvo de la IA:** los scripts `matriz_confusion.py` y `galeria_peores.py`, el texto de `peores_casos.md` y las model cards, a partir de los resultados que yo le fui pasando.
-
-**Que hice yo:** ejecute los scripts con el modelo `mejorado_384` y los datos reales, medi la latencia en CPU en los casos 005, 023 y 048, y revise las figuras y las cifras contra el JSON de evaluacion.
-
-**Pendiente del equipo:** analisis critico y card de `sin_cbam`.
-
 ## 2026-10-16 — Ablaciones y línea base SAM
 
 Herramienta: Claude (Anthropic), en chat, octubre de 2026. La IA se usó como apoyo de consulta y para armar comandos; las decisiones sobre qué correr, con qué modelo y qué subir fueron propias.
@@ -380,3 +370,44 @@ git push -u origin feat/baseline-sam
 - *Limitaciones:* las hipotesis de los peores casos salen de los numeros y no de mirar las imagenes, asi
   que hay que confirmarlas con la galeria; el informe quedo justo en 4 paginas y Word puede acomodar las
   tablas distinto al convertidor usado para verificarlo.
+
+## 2026-10-17 — Evaluación: matriz de confusión, peores casos, latencia en CPU y model cards
+
+**Modelo usado:** Claude (Anthropic), Sonnet 5.5 y Opus 5.5, en claude.ai.
+
+**Prompt (resumen fiel):**
+> Guíame en mi parte (matriz de confusión, 5 peores casos, latencia en CPU y model cards) dándome los comandos
+> para correrla en el PC de otro integrante del equipo y para subirla desde mi git, y hazme un documento de avance
+> tipo checklist para el docente para exponerlo.
+
+**Mis decisiones:**
+- Correr todo en el PC de otro integrante del equipo (RTX 3050, Ryzen 7 5800H, 31.3 GB de RAM), porque mi PC no
+  tiene GPU ni la capacidad para trabajar con los datos.
+- No dar por buenos los resultados del modelo `completo` ni de `mejorado_384`: cuando el equipo cambió el modelo final,
+  volví a correr toda mi parte con `sin_cbam_384`.
+- Revisar las cifras: noté que la matriz usaba 4005 cortes y no los 4821 de los volúmenes completos, y eso explicó
+  la diferencia de F1 con la evaluación (0.988 contra 0.981).
+- Revisar cada figura de los peores casos antes de aceptar la descripción.
+- Pedir un documento de avance ("PENGWIN · Avance semana 10") para la exposición.
+
+**Comandos que pedí y usé:**
+```
+git fetch origin
+git merge origin/main
+python scripts/matriz_confusion.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --nombre sin_cbam_384 --evaluacion docs/resultados/sin_cbam_384/evaluacion_cuda.json
+python scripts/galeria_peores.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --evaluacion docs/resultados/sin_cbam_384/evaluacion_cuda.json
+python scripts/inferir.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --ct data/raw/images/<caso>.mha --device cpu   # casos 005, 023 y 048
+git add <mis archivos>
+git commit -m "..."
+git push -u origin feat/matriz-galeria
+```
+
+**Qué se obtuvo de la IA:** los scripts `matriz_confusion.py` y `galeria_peores.py`, los borradores de
+`docs/peores_casos.md` y de las model cards, y los textos del documento de avance.
+
+**Análisis crítico:**
+- Las primeras versiones de `peores_casos.md` tenían afirmaciones que no se sostenían al compararlas con los datos
+  (por ejemplo, qué caso tenía más espurios); se corrigieron.
+- La IA no pudo explicar la diferencia de F1 entre la matriz y la evaluación; la causa salió de revisar el número de cortes.
+- Supuso cosas del equipo que no sabía (qué PC estaba entrenando, el orden de los pasos de git); hubo que corregirla.
+- Las causas de los peores casos son hipótesis a partir de un solo corte por caso.
