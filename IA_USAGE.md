@@ -66,9 +66,11 @@ Formato de cada entrada:
 - `baseline_sam.py` no se pudo ejecutar en el entorno de la IA (requiere descargar los pesos de SAM).
 - El tunel de Cloudflare no se probo; el dashboard si.
 
-**Que se modifico manualmente:** (completar por el equipo al revisar y adaptar el codigo)
+**Que se modifico manualmente (Carlos):** corri todo con los datos reales en mi GPU y reemplace
+los valores provisionales: ventana de HU segun el EDA y lambdas calibrados, redondeados por mi.
 
-**Analisis critico:** (completar: que se entendio, que se cambio y por que)
+**Analisis critico (Carlos):** la IA dio la estructura, pero solo estaba probada con datos
+sinteticos. Decidi no aceptar ningun resultado que no saliera de una corrida con datos reales.
 
 ## Sesion — eliminacion de scikit-learn (bloqueo de Windows)
 
@@ -85,7 +87,8 @@ a sklearn, incluidos empates y clases vacias). Se simulo el bloqueo (import de `
 y `sklearn` fallando) y se corrieron pruebas, entrenamiento, evaluacion, inferencia y
 dashboard: todo funciona y las metricas coinciden con la version anterior.
 
-**Pendiente del equipo:** analisis critico y modificaciones manuales.
+**Analisis critico (Carlos):** el error lo encontre al entrenar en mi PC y le pase el traceback a la
+IA. Le pedi que la metrica propia se comparara contra sklearn antes de aceptarla.
 
 ## Sesion — configuraciones de ablacion y transfer learning desde el Taller 3
 
@@ -102,7 +105,8 @@ solo copiaba 5 tensores. Se corrigio y se agrego una prueba de equivalencia nume
 **Verificacion:** 14 pruebas pasan; ambas ablaciones entrenan en datos sinteticos; la salida
 del bloque copiado coincide con la original (diferencia maxima 5e-7).
 
-**Pendiente del equipo:** analisis critico y modificaciones manuales.
+**Analisis critico (Carlos):** pedi que cada ablacion cambiara un solo factor para poder compararlas.
+El transfer learning no mejoro el Dice y decidimos reportarlo igual.
 
 ## Sesion — cargador con varios procesos y segundo bloqueo de Windows
 
@@ -124,7 +128,8 @@ como OK porque en ese momento aun no estaba bloqueado: la comprobacion por libre
 empates; con el bloqueo simulado corren entrenamiento, evaluacion y diagnostico; y las metricas por fragmento
 son identicas a las de la version con scipy en 144 fragmentos (mismas parejas, mismo Dice).
 
-**Pendiente del equipo:** analisis critico y modificaciones manuales.
+**Analisis critico (Carlos):** los dos errores salieron en mis corridas en Windows y yo se los
+reporte a la IA; ella propuso las correcciones y las pruebas contra scipy.
 
 ## Sesion — interpretabilidad en el notebook
 
@@ -141,7 +146,8 @@ test con mas fragmentos.
 calculo del gamma detecta canales apagados. Con el modelo real, ningun canal del backbone esta apagado
 (gamma medio entre 0.91 y 0.99 por bloque).
 
-**Pendiente del equipo:** analisis critico y modificaciones manuales.
+**Analisis critico (Carlos):** le pedi a la IA que el notebook mostrara pacientes con fractura,
+Grad-CAM y el gamma de BatchNorm, porque sin eso no se podia explicar como decide la red.
 
 ## Sesion — precision de fragmentos y tamano minimo en mL
 
@@ -158,4 +164,176 @@ perder mas de 0.005 de Dice de fragmento".
 barrido corren de punta a punta con un modelo de prueba, y el barrido rechaza un minimo que elimina fragmentos
 reales pequenos.
 
-**Pendiente del equipo:** analisis critico y modificaciones manuales.
+**Analisis critico (Carlos):** vi que el caso 039 tenia 19 fragmentos predichos para 9 reales aunque
+el Dice salia bien. La IA ayudo a medir la precision y a elegir el minimo de 1 mL en validacion.
+
+
+## Octubre — Orientacion de los CT
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Que pedi:** revisar si nuestra rotacion estaba bien, con las notas del profesor y su articulo.
+
+**En que ayudo la IA:** revisar las matrices de direccion de los 100 CT (34 rotados 180 grados) y
+medir la inclinacion residual (mediana 3 grados).
+
+**Lo que decidi:** no remuestrear el volumen y cubrir la inclinacion con la rotacion de 35 grados
+que sugirio el profesor.
+
+## Octubre — Receta a 384 px
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Que pedi:** una forma de subir el Dice de fragmentos, y dejar el PC entrenando toda la noche.
+
+**En que ayudo la IA:** la receta (384 px, peso x3 a secundarios, rotacion de 35 grados) y el script
+para correrla de noche.
+
+**Lo que decidi:** correr todo en mi PC, sin Colab ni Drive, y adoptar la receta solo si mejoraba
+en validacion. Paso de 0.695 a 0.719.
+
+## Octubre — Ablacion de CBAM y modelo final
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Que pedi:** ajustar a 384 px el modelo sin CBAM para compararlo contra el mejorado. La idea fue mia;
+la IA habia dejado como final el modelo con CBAM.
+
+**En que ayudo la IA:** la configuracion y el script de la ablacion.
+
+**Lo que decidi:** cuando las epocas tardaban 1800 s vi que el kernel del notebook ocupaba la RAM y
+lo cerre (bajo a 473 s). En equipo elegimos el modelo sin CBAM (validacion 0.793) como final.
+
+## Octubre — Dashboard con el modelo final
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Que pedi:** que el dashboard cargara el modelo final; Esteban vio que solo cargaba el modelo base.
+
+**En que ayudo la IA:** que el dashboard use la configuracion guardada en cada checkpoint.
+
+## 2026-10-04 — Despliegue del dashboard con tunel de Cloudflare (Esteban)
+
+**Modelo usado:** Claude (Anthropic), Opus 5.5, en claude.ai.
+
+**Prompts (resumen fiel; fue una sesion larga de ida y vuelta):**
+> "segun el informe que me toca esperar para poder hacer x cosa y que puedo ir haciendo"
+> (adjuntando el PDF del reparto de tareas y el enlace del repositorio)
+>
+> "dame el codigo de la terminal para activar el entorno y eso, con los pasos a seguir"
+>
+> "aclaremos que mi pc no tiene gpu nvidia"
+>
+> Despues, en cada paso, se pegaba la salida de la terminal o una captura del error
+> (`Move-Item` sin permisos, `no such host` de cloudflared, `502 Bad Gateway`) y se pedia
+> el siguiente paso.
+>
+> "todo eso para hacer el paso mio?"
+>
+> "dame mi IA_USAGE de mi parte ... me ayudas a preparar el despliegue.md"
+
+**Que se obtuvo:**
+- Que tareas de la seccion 6 se podian empezar ya y cuales dependian de Carlos, David y Sara.
+- La secuencia de comandos de PowerShell para clonar, crear el entorno, instalar PyTorch en
+  version CPU, organizar y preparar los datos, copiar los pesos a `checkpoints/`, levantar
+  Streamlit y abrir el tunel.
+- La confirmacion, leyendo el codigo, de que el pipeline corre en CPU sin cambios:
+  `src/inferencia.py` carga con `map_location="cpu"`, el autocast solo se activa en CUDA y el
+  dashboard solo ofrece `cpu` cuando no hay GPU.
+- El diagnostico de dos fallas de red: el DNS del PC no respondia (comprobado con
+  `nslookup` contra `1.1.1.1`) y el error 502, que no era del tunel sino de Streamlit apagado.
+- La revision del video de respaldo y el borrador de `docs/despliegue.md` y de esta entrada.
+
+**Que se modifico o verifico manualmente:**
+- Todos los comandos se ejecutaron en el PC propio y se verificaron sus salidas: md5 de los
+  3 zips, 100 imagenes y 100 etiquetas emparejadas, split con sha256 `99267ddb2310271e`
+  (igual al del equipo), PyTorch `2.14.1+cpu`, tunel con todos los chequeos en `PASS`.
+- La latencia (170.4 ms por corte, 74.2 s para el caso 002) se tomo del dashboard, no de la IA.
+- El video se volvio a grabar porque la primera version duraba 58 s y no mostraba la
+  advertencia de uso no clinico.
+- [Esteban: anotar aqui lo que cambiaste a mano en el borrador de `despliegue.md`.]
+
+**Analisis critico:**
+- *Aciertos:* leer el codigo antes de responder evito instalar cosas innecesarias (por
+  ejemplo, confirmo que no hacia falta modificar nada para correr en CPU). El diagnostico del
+  DNS y del 502 fue correcto y rapido porque se basaba en la salida real (`nslookup`, la
+  pagina de error de Cloudflare). Tambien advirtio que el caso `001` es de entrenamiento y que
+  la demo debia hacerse con un caso de test (`002`), lo que evita mostrar un desempeno inflado.
+- *Errores de la IA:*
+  1. Dio el comando de PyTorch con CUDA (2.5 GB) antes de preguntar si el PC tenia GPU. Hubo
+     que reinstalar la version CPU.
+  2. Pidio clonar el repositorio sin indicar que primero habia que salir de la carpeta del
+     zip, asi que el clon quedo anidado y el entorno virtual se creo en la carpeta equivocada.
+     La solucion que propuso despues (mover la carpeta) fallo porque estaba abierta en VS Code;
+     lo que funciono fue clonar de nuevo.
+  3. Se salio del alcance de la tarea: propuso medir la latencia en 3 casos con `inferir.py`,
+     correr el EDA y analizar el MAE, cuando el reparto pide un solo caso y la latencia formal
+     en CPU es tarea de Sara. Al preguntarle "todo eso para hacer el paso mio?", releyo el
+     reparto y corrigio la lista.
+  4. Supuso que habia que instalar cloudflared con `winget`, pero ya estaba instalado.
+  5. No advirtio desde el principio que la terminal de Streamlit no debia reutilizarse, lo que
+     causo el 502.
+- *Limitaciones:* la IA no tiene acceso al PC; todo lo que sabe sale de lo que se le pega, asi
+  que un error que no se copia completo no lo puede diagnosticar. Tampoco puede comprobar el
+  enlace desde un celular: esa verificacion es manual. Los borradores de documentacion hay que
+  revisarlos, porque los datos del equipo (procesador, RAM) y las capturas no los puede saber.
+
+## 2026-10-16 — Evaluacion de Sara (matriz de confusion, peores casos, latencia CPU, model cards)
+
+**Modelo usado:** Claude Sonnet 5.5, en claude.ai.
+
+**Que se obtuvo de la IA:** los scripts `matriz_confusion.py` y `galeria_peores.py`, el texto de `peores_casos.md` y las model cards, a partir de los resultados que yo le fui pasando.
+
+**Que hice yo:** ejecute los scripts con el modelo `mejorado_384` y los datos reales, medi la latencia en CPU en los casos 005, 023 y 048, y revise las figuras y las cifras contra el JSON de evaluacion.
+
+**Pendiente del equipo:** analisis critico y card de `sin_cbam`.
+
+## 2026-10-16 — Entradas de José David Mesa (ablaciones y línea base SAM)
+
+Herramienta: Claude (Anthropic), en chat, octubre de 2026. La IA se usó como apoyo de consulta y para armar comandos; las decisiones sobre qué correr, con qué modelo y qué subir fueron propias.
+
+### 1. Encontrar y probar SAM
+
+- **Qué se le pidió:** qué es SAM, de dónde se instala, qué pesos usar en una GPU de 4 GB y qué opciones tiene `scripts/baseline_sam.py`.
+- **Qué aportó:** el repositorio oficial de SAM (Meta AI) y la URL de los pesos `sam_vit_b_01ec64.pth`, la versión más liviana.
+- **Decisiones propias:** instalar SAM sin tocar las dependencias del proyecto (`--no-deps`); revisar las opciones reales del script con `--help` antes de usarlo; hacer una prueba rápida con pocos cortes antes de la corrida completa; repetir la comparación con el modelo final (`sin_cbam_384`) en lugar de quedarse con la del modelo anterior.
+- **Análisis crítico:** la IA dio un comando sin `python -u`, y con la salida redirigida no se veía el avance; se detectó y se reinició la corrida. Las capturas de instrucciones del equipo llegaban recortadas, así que los comandos se confirmaron contra el `--help` del script.
+
+### 2. Actualizar Git y bajar los cambios del equipo
+
+- **Qué se le pidió:** cómo apuntar al repositorio renombrado, bajar `main`, trabajar en una rama propia y resolver un error 403 al subir.
+- **Qué aportó:** los comandos de `git remote set-url`, `git pull --rebase origin main` y el diagnóstico del 403 (Windows usaba la credencial guardada de otra cuenta).
+- **Decisiones propias:** mover fuera del repositorio los archivos de otra integrante que se habían generado en este equipo, para que ella los suba desde su cuenta; agregar siempre los archivos por nombre y no con `git add -A`; subir el trabajo en la rama `feat/baseline-sam` con Pull Request y revisión.
+- **Análisis crítico:** en el 403 la IA supuso primero que faltaba la invitación de colaborador; la causa real se encontró al indicarle la cuenta correcta.
+
+### 3. Volver a correr con los modelos nuevos
+
+- **Qué se le pidió:** qué cambió en `main` después de la ablación de CBAM y qué había que repetir.
+- **Qué aportó:** confirmó que tras el `pull` estaban los pesos y configuraciones nuevos (`mejorado_384`, `sin_cbam`, `sin_cbam_384`) y qué medición faltaba (validación de `con_tl`).
+- **Decisiones propias:** medir la validación de `con_tl` para completar la tabla; correr SAM sobre el modelo final elegido; reportar los resultados de CBAM como "no aporta" y no como "mejora mucho", porque mejora en validación pero no en test.
+
+### 4. Comandos usados en las pruebas
+
+```
+# Entorno y datos
+python scripts/verificar_entorno.py
+python scripts/preparar_datos.py
+
+# SAM: instalación, prueba rápida y corridas completas
+python -m pip install --no-deps git+https://github.com/facebookresearch/segment-anything.git
+Invoke-WebRequest https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth -OutFile checkpoints\sam_vit_b_01ec64.pth
+python scripts/baseline_sam.py --help
+python scripts/baseline_sam.py --config configs/mejorado_384.yaml --ckpt pesos/mejorado_384.pth --sam checkpoints/sam_vit_b_01ec64.pth --cada 50
+python -u scripts/baseline_sam.py --config configs/mejorado_384.yaml --ckpt pesos/mejorado_384.pth --sam checkpoints/sam_vit_b_01ec64.pth
+python -u scripts/baseline_sam.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --sam checkpoints/sam_vit_b_01ec64.pth
+
+# Validación de con_tl
+python scripts/diagnostico_fragmentos.py --config configs/ablacion_con_tl.yaml --ckpt pesos/con_tl.pth
+
+# Git
+git remote set-url origin https://github.com/ShadowBlack33/Proyecto-Analitica-de-Datos.git
+git checkout -b feat/baseline-sam
+git pull --rebase origin main
+git add docs/resultados_ablacion_sam.md
+git push -u origin feat/baseline-sam
+```
