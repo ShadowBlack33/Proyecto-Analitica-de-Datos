@@ -156,10 +156,12 @@ python scripts/eda.py
 
 ```bash
 python scripts/train.py --nombre completo                       # base model, full curriculum (~5 h on an RTX 3060)
+python scripts/train.py --config configs/ablacion_con_tl.yaml --nombre con_tl   # transfer-learning ablation (~4 h); needs the Taller 3 backbone at checkpoints/checkpoint_taller3.pt
 powershell -ExecutionPolicy Bypass -File scripts/correr_noche.ps1      # 384-px recipe with CBAM (mejorado_384)
 powershell -ExecutionPolicy Bypass -File scripts/correr_sin_cbam.ps1   # CBAM ablation at 256 and 384 px -> final model sin_cbam_384 (~6 h)
 
 python scripts/evaluar.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --nombre sin_cbam_384 --degradacion 0 1 2 3
+python scripts/evaluar.py --config configs/ablacion_con_tl.yaml --ckpt pesos/con_tl.pth --nombre con_tl
 python scripts/inferir.py --config configs/ablacion_sin_cbam_384.yaml --ckpt pesos/sin_cbam_384.pth --ct data/raw/images/039.mha   # exports a labelled .mha
 ```
 
