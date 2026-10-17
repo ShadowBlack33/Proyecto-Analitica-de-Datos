@@ -21,13 +21,15 @@ RAIZ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RAIZ))
 
 from src.data.io import leer_volumen, listar_casos  # noqa: E402
+from src.dashboard.marca import ICONO, aplicar_diseno, marca_lateral  # noqa: E402  (solo diseño)
 from src.dashboard.visualizadores import vis_corte, vis_mip_raw, vis_reconstruccion  # noqa: E402
 from src.utils import cargar_config, dispositivo  # noqa: E402
 
 AVISO = ("**Uso exclusivamente académico.** Este sistema no es un dispositivo médico, no ha sido "
          "validado clínicamente y no debe usarse para apoyar decisiones quirúrgicas reales.")
 
-st.set_page_config(page_title="PENGWIN · fracturas pélvicas", page_icon="🦴", layout="wide")
+st.set_page_config(page_title="PENGWIN · fracturas pélvicas", page_icon=ICONO, layout="wide")
+aplicar_diseno()
 st.warning(AVISO, icon="⚠️")
 st.title("🦴 PENGWIN — detección, segmentación y medición de fracturas pélvicas")
 
@@ -48,6 +50,7 @@ def _volumen(ruta: str):
 
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
+    marca_lateral()
     st.header("Entrada")
     fuente = st.radio("Volumen", ["Caso del dataset", "Subir archivo (.mha / .nii.gz)"])
     ruta_vol = ruta_gt = None
