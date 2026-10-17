@@ -36,9 +36,16 @@ cfg = cargar_config(RAIZ / "configs" / "default.yaml")
 
 @st.cache_resource(show_spinner="Cargando modelo…")
 def _modelo(ruta: str, dev: str):
+    """Cada checkpoint guarda la configuracion con la que se entreno (resolucion, CBAM...).
+    Se usa esa para construir la red e inferir; el post-proceso y las rutas vienen del repo."""
     from src.inferencia import cargar_modelo
     import torch
-    return cargar_modelo(ruta, cfg, torch.device(dev))
+    ck = torch.load(ruta, map_location="cpu", weights_only=False)
+    cfg_ck = ck.get("config") if isinstance(ck, dict) else None
+    cfg_ck = dict(cfg_ck) if cfg_ck else dict(cfg)
+    cfg_ck["rutas"] = cfg["rutas"]
+    cfg_ck["postproceso"] = {**cfg_ck.get("postproceso", {}), **cfg["postproceso"]}
+    return cargar_modelo(ruta, cfg_ck, torch.device(dev)), cfg_ck
 
 
 @st.cache_data(show_spinner="Leyendo volumen…", max_entries=2)
@@ -69,8 +76,11 @@ with st.sidebar:
             ruta_vol = str(tmp)
 
     st.header("Modelo")
-    cks = sorted(str(p.relative_to(RAIZ)) for p in (RAIZ / cfg["rutas"]["checkpoints"]).rglob("mejor_*.pth"))
-    ruta_ck = st.selectbox("Checkpoint", cks) if cks else None
+    publicados = sorted((RAIZ / "pesos").glob("*.pth"))
+    final = [p for p in publicados if p.stem == "sin_cbam_384"]
+    cks = [str(p.relative_to(RAIZ)) for p in final + [p for p in publicados if p not in final]]
+    cks += sorted(str(p.relative_to(RAIZ)) for p in (RAIZ / cfg["rutas"]["checkpoints"]).rglob("mejor_*.pth"))
+    ruta_ck = st.selectbox("Checkpoint", cks, help="pesos/sin_cbam_384.pth es el modelo final") if cks else None
     opciones_dev = ["cuda", "cpu"] if dispositivo().type == "cuda" else ["cpu"]
     dev = st.selectbox("Dispositivo", opciones_dev)
     correr = st.button("Ejecutar inferencia", type="primary", disabled=not (ruta_vol and ruta_ck))
@@ -89,8 +99,8 @@ if correr:
     import torch
     from src.inferencia import inferir_volumen
     t0 = time.perf_counter()
-    res = inferir_volumen(_modelo(RAIZ / ruta_ck if not Path(ruta_ck).is_absolute() else ruta_ck, dev),
-                          hu, spacing, cfg, torch.device(dev))
+    modelo, cfg_modelo = _modelo(str(RAIZ / ruta_ck if not Path(ruta_ck).is_absolute() else ruta_ck), dev)
+    res = inferir_volumen(modelo, hu, spacing, cfg_modelo, torch.device(dev))
     res["latencia"]["total_s"] = time.perf_counter() - t0
     st.session_state[clave] = res
 res = st.session_state.get(clave)

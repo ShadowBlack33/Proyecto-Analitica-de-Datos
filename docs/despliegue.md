@@ -79,15 +79,14 @@ Verificación:
 
 ### 2.3 Pesos del modelo
 
-El dashboard solo lista los modelos que estén en `checkpoints/**/mejor_*.pth`, así que se
-copia el modelo publicado en `pesos/`:
+El dashboard lista directamente los modelos de `pesos/` (y los de `checkpoints/**/mejor_*.pth`,
+si hay entrenamientos locales). El primero de la lista es el modelo final,
+`pesos/sin_cbam_384.pth`: no hay que copiar nada.
 
-```powershell
-New-Item -ItemType Directory -Force checkpoints\completo
-Copy-Item pesos\completo.pth checkpoints\completo\mejor_conjunto.pth
-```
-
-`checkpoints/` está en `.gitignore`: esta copia nunca se sube al repositorio.
+Cada checkpoint guarda la configuración con la que se entrenó (resolución 256 o 384, con o sin
+CBAM), y el dashboard construye la red con esa configuración; el post-proceso (por ejemplo, el
+mínimo de 1 mL por fragmento) se toma de `configs/default.yaml`. Así se puede elegir cualquier
+modelo de `pesos/` en la demo sin tocar archivos.
 
 ### 2.4 Dashboard (terminal 1)
 
