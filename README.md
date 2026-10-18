@@ -14,6 +14,18 @@
 
 > ⚠️ Research / educational project. **Not a medical device**, not clinically validated, not for surgical decisions.
 
+**📚 Deliverables**
+
+| | |
+|---|---|
+| 🎬 Demo video (final model) | <https://youtu.be/F4WF51ItQvI> |
+| 📄 Final report | [`docs/informe_final.pdf`](docs/informe_final.pdf) · [Word](docs/informe_final.docx) |
+| 🧪 Ablations (CBAM, transfer learning) and SAM baseline | [`docs/resultados_ablacion_sam.md`](docs/resultados_ablacion_sam.md) |
+| 🔍 Five worst test cases | [`docs/peores_casos.md`](docs/peores_casos.md) |
+| 🗂️ Model cards | [final `sin_cbam_384`](docs/model_card_sin_cbam_384.md) · [`mejorado_384`](docs/model_card_mejorado_384.md) · [`completo`](docs/model_card_completo.md) · [`sin_cbam`](docs/model_card_sin_cbam.md) · [`con_tl`](docs/model_card_con_tl.md) |
+| 🌐 Deployment (Streamlit + Cloudflare, CPU latency) | [`docs/despliegue.md`](docs/despliegue.md) |
+| 🤖 Generative-AI usage log | [`IA_USAGE.md`](IA_USAGE.md) |
+
 ---
 
 ## 🎯 Project direction
